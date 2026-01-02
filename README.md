@@ -407,7 +407,7 @@ in the Software without restriction...
 
 **Miguel M**
 - Twitter: [@MiguelM_dev0](https://twitter.com/MiguelM_dev0)
-- GitHub: [@your-github-username](https://github.com/your-github-username)
+- GitHub: [@MiguelM_dev](https://github.com/MigMarGil)
 
 ## Acknowledgments
 
