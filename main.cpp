@@ -10,15 +10,8 @@
 #include <random>
 #include <iomanip>
 
-// ============================================================================
-// SMART MEMORY MANAGER WITH PREDICTIVE AI
-// A revolutionary memory management system that learns patterns
-// and automatically optimizes allocations using ML techniques
-// ============================================================================
-
 namespace SmartMemory {
 
-// Structure to store memory usage metrics
 struct MemoryMetrics {
     size_t totalAllocations{0};
     size_t totalDeallocations{0};
@@ -29,12 +22,11 @@ struct MemoryMetrics {
     std::vector<double> accessPatterns;
 };
 
-// Predictor based on simple linear regression
 class MemoryPredictor {
 private:
     std::vector<double> weights;
     double bias{0.0};
-    double learningRate{0.001};  // Reduced to prevent explosion
+    double learningRate{0.001};
     std::mutex mtx;
     static constexpr double MAX_WEIGHT = 1000000.0;
     static constexpr double MIN_WEIGHT = -1000000.0;
@@ -42,7 +34,6 @@ private:
 public:
     MemoryPredictor() : weights(5, 0.0) {}
 
-    // Predicts optimal memory size based on historical patterns
     size_t predict(const std::vector<double>& features) {
         std::lock_guard<std::mutex> lock(mtx);
         double prediction = bias;
@@ -52,7 +43,6 @@ public:
         return std::max(size_t(1024), size_t(std::abs(prediction)));
     }
 
-    // Trains the model with new data
     void train(const std::vector<double>& features, double actual) {
         std::lock_guard<std::mutex> lock(mtx);
         double predicted = bias;
@@ -61,7 +51,6 @@ public:
         }
         
         double error = actual - predicted;
-        // Clip error to prevent explosion
         error = std::max(-100000.0, std::min(100000.0, error));
         
         bias += learningRate * error;
@@ -69,7 +58,6 @@ public:
         
         for (size_t i = 0; i < std::min(features.size(), weights.size()); ++i) {
             weights[i] += learningRate * error * features[i];
-            // Clip weights to prevent explosion
             weights[i] = std::max(MIN_WEIGHT, std::min(MAX_WEIGHT, weights[i]));
         }
     }
@@ -86,7 +74,6 @@ public:
     }
 };
 
-// Intelligent memory pool with pre-allocation
 template<typename T>
 class SmartMemoryPool {
 private:
@@ -105,11 +92,9 @@ private:
 public:
     explicit SmartMemoryPool(MemoryPredictor& pred) : predictor(pred) {}
 
-    // Intelligently allocates memory
     T* allocate(size_t size) {
         std::lock_guard<std::mutex> lock(poolMutex);
         
-        // Search for available block
         for (auto& block : pool) {
             if (!block.inUse && block.size >= size) {
                 block.inUse = true;
@@ -121,7 +106,6 @@ public:
             }
         }
 
-        // Create new block with prediction
         std::vector<double> features = extractFeatures();
         size_t predictedSize = predictor.predict(features);
         size_t allocSize = std::max(size, predictedSize);
@@ -140,13 +124,11 @@ public:
         metrics.currentUsage += size * sizeof(T);
         metrics.peakUsage = std::max(metrics.peakUsage, metrics.currentUsage);
 
-        // Train predictor
         predictor.train(features, static_cast<double>(size));
 
         return ptr;
     }
 
-    // Deallocates memory
     void deallocate(T* ptr) {
         std::lock_guard<std::mutex> lock(poolMutex);
         for (auto& block : pool) {
@@ -164,7 +146,6 @@ public:
         }
     }
 
-    // Optimizes the pool by removing unused blocks
     void optimize() {
         std::lock_guard<std::mutex> lock(poolMutex);
         auto now = std::chrono::steady_clock::now();
@@ -174,7 +155,7 @@ public:
                 if (!block.inUse) {
                     auto timeSinceUse = std::chrono::duration_cast<std::chrono::seconds>(
                         now - block.lastUsed).count();
-                    return timeSinceUse > 10; // Remove if unused for 10s
+                    return timeSinceUse > 10;
                 }
                 return false;
             }), pool.end());
@@ -186,7 +167,6 @@ private:
     std::vector<double> extractFeatures() {
         std::vector<double> features;
         
-        // Normalize features to prevent explosion
         double norm = 10000.0;
         
         features.push_back(static_cast<double>(metrics.totalAllocations) / norm);
@@ -208,7 +188,6 @@ private:
     }
 };
 
-// Real-time monitor
 class MemoryMonitor {
 private:
     bool running{false};
@@ -252,11 +231,7 @@ public:
     ~MemoryMonitor() { stop(); }
 };
 
-} // namespace SmartMemory
-
-// ============================================================================
-// SYSTEM DEMONSTRATION
-// ============================================================================
+}
 
 class DataProcessor {
 private:
@@ -270,7 +245,6 @@ public:
         
         int* data = memoryPool.allocate(dataSize);
         
-        // Simulate processing
         for (size_t i = 0; i < dataSize; ++i) {
             data[i] = static_cast<int>(i * i);
         }
@@ -301,32 +275,28 @@ public:
 int main() {
     std::cout << R"(
 ==================================================================
-                                                              
+                                                               
      SMART MEMORY MANAGER WITH PREDICTIVE AI                 
      Revolutionary Memory Management System            
-                                                              
+                                                               
      Features:                                         
      * Memory usage prediction with Machine Learning                
      * Intelligent memory pool                           
      * Real-time monitoring                              
      * Auto-optimization                                     
-                                                              
+                                                               
 ==================================================================
 )" << std::endl;
 
-    // Initialize system
     SmartMemory::MemoryPredictor predictor;
     SmartMemory::SmartMemoryPool<int> memoryPool(predictor);
     SmartMemory::MemoryMonitor monitor;
 
-    // Start monitoring
     monitor.start(memoryPool, predictor);
 
-    // Run workload
     DataProcessor processor(memoryPool);
     processor.simulateWorkload();
 
-    // Wait to see final statistics
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     std::cout << "\n[SYSTEM] System terminated successfully\n";
